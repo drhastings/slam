@@ -14,6 +14,7 @@
 #include "include/matrices.h"
 #include <pigpio.h>
 #include "include/ekf.h"
+#include "include/viz.h"
 #include "include/hough.h"
 #include "include/read_serial.h"
 #include "include/read_sensors.h"
@@ -27,6 +28,10 @@ extern pthread_cond_t scan_ready;
 
 #define WRITE_FILE "/tmp/scans"
 
+struct read_serial_out *serial_out; 
+struct hough_transformer transform;
+struct hough_transformer *pTrans = &transform;
+
 int main()
 {
   struct mat ** map = malloc(sizeof(struct mat *));
@@ -34,18 +39,18 @@ int main()
   struct mat * pos = mat(3, 1);  
   struct mat * last_pos = mat(3, 1);  
 
-  struct read_serial_out *serial_out = malloc(sizeof(struct read_serial_out));
+  struct mat * here = mat(3, 1);
+
+  serial_out = malloc(sizeof(struct read_serial_out));
 
   serial_out->map = map;
 
   serial_out->mutex = &mutex;
   serial_out->scan_ready = &scan_ready;
 
-  struct hough_transformer transform;
-
   memset(&transform, 0, sizeof(struct hough_transformer));
 
-  init_hough(360, 400, &transform);
+  init_hough(720, 800, &transform);
 
   gpioCfgClock(1, 0, 0);
   gpioInitialise();
@@ -63,10 +68,12 @@ int main()
   pthread_t serial_thread;
   pthread_t sensor_thread;
   pthread_t joy_thread;
+  pthread_t viz_thread;
 
   pthread_create(&serial_thread, NULL, read_serial, (void *) serial_out);
   pthread_create(&sensor_thread, NULL, sensor_read_function, NULL);
   pthread_create(&joy_thread, NULL, joy, NULL);
+  pthread_create(&viz_thread, NULL, viz_write, map);
 
   while(1)
   {
@@ -101,9 +108,9 @@ int main()
 
     for (i = 0; i < transform.count; i++)
     {
-      printf("%f,\t%f\n", transform.results[i * 2], transform.results[(i * 2) + 1]);
+      //printf("%f,\t%f\n", transform.results[i * 2], transform.results[(i * 2) + 1]);
     }
-    printf("%d\n", transform.count);
+    //printf("I saw %d lines\n", transform.count);
 
     //printf("%f,\t%f\n", get_encoder_x(), get_encoder_y());
     //printf("%f,\t%f\n", get_mpu_x(), get_mpu_y());
@@ -123,6 +130,11 @@ int main()
     MSET(U, 0, 0, dist);
     MSET(U, 1, 0, MGET(pos, 2, 0) - MGET(last_pos, 2, 0));
     ekf_step(map, U, transform.results, transform.count);
+
+    sub_mat(here, *map, 0, 0);
+
+    print_mat(here);
+    print_mat(pos);
 
     copy_into(last_pos, pos, 0, 0);
 

@@ -16,6 +16,7 @@ int32_t last_right = 0;
 
 double mpu_heading = 0;
 double mpu_heading_offset = 0;
+double last_mpu_heading = 0;
 double encoder_heading = 0;
 
 extern int16_t spin_axis, forward_axis;
@@ -24,6 +25,8 @@ double x_pos_encoders, y_pos_encoders;
 double x_pos_mpu, y_pos_mpu;
 
 int first = 1;
+
+struct quaternion orientation;
 
 void *sensor_read_function()
 {
@@ -48,8 +51,6 @@ void *sensor_read_function()
     float xx = temp[1] / 16384.0f;
     float y = (float)temp[2] / 16384.0f;
     float z = (float)temp[3] / 16384.0f;
-
-    struct quaternion orientation;
 
     orientation.w = w;
     orientation.x = xx;
@@ -135,7 +136,9 @@ void *sensor_read_function()
 
     encoder_heading += theta_delta_wheels;
 
-    //theta_delta = mpu_heading - last_mpu_heading;
+    double theta_delta = mpu_heading - last_mpu_heading;
+
+    last_mpu_heading = mpu_heading;
 
     while (mpu_heading > M_PI)
     {
@@ -147,7 +150,7 @@ void *sensor_read_function()
       mpu_heading += 2 * M_PI;
     }
 
-    /*if (fabs(theta_delta) > .016)
+    if (fabs(theta_delta) > .016)
     {
       printf("using wheels, %f\n", theta_delta);
       theta_delta = theta_delta_wheels;
@@ -155,6 +158,7 @@ void *sensor_read_function()
       mpu_file = open("/dev/encoders", O_RDONLY);
 
     }
+/*
     if (0)//fabs(theta_delta_wheels) < 0.000001)
     {
       theta_delta = 0;
@@ -275,4 +279,9 @@ double get_mpu_x()
 double get_mpu_y()
 {
   return y_pos_mpu;
+}
+
+struct quaternion get_orientation()
+{
+  return orientation;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "quaternion.h"
+
 void *sensor_read_function();
 int get_right_count();
 int get_left_count();
@@ -9,3 +11,4 @@ double get_encoder_x();
 double get_encoder_y();
 double get_mpu_x();
 double get_mpu_y();
+struct quaternion get_orientation();

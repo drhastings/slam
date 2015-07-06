@@ -182,7 +182,7 @@ int hough(double points[360 * 2], int num_points, struct hough_transformer * tra
     }
   }
 
-  adaptive_threshold(.4, transform);
+  adaptive_threshold(.7, transform);
 
   //write_bmp();
 

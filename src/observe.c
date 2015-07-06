@@ -20,9 +20,14 @@ void observe(struct mat * y, struct mat * Y_r, struct mat * Y_p, struct mat * r,
 
   scan(y, Y_pr, pr);
 
-  prodMat(Y_r, Y_pr, PR_r);
-  prodMat(Y_p, Y_pr, PR_p);
-
+  if (Y_r)
+  {
+    prodMat(Y_r, Y_pr, PR_r);
+  }
+  if (Y_p)
+  {
+    prodMat(Y_p, Y_pr, PR_p);
+  }
   free(Y_pr);
   free(pr);
   free(PR_r);
